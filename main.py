@@ -1,6 +1,10 @@
+import tkinter as tk
+from tkinter import ttk
 import networkx as nx
 from collections import deque
 import heapq
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 tec = nx.Graph()
 tec.add_nodes_from(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -154,7 +158,7 @@ def branch_and_bound(graph, start, end):
         (cost, path) = heapq.heappop(queue)
         node = path[-1]
         if node == end:
-            return cost, path
+            return path
         # Si el nodo actual no ha sido visitado, lo marca como visitado y añade sus vecinos a la cola con los costos y
         # caminos actualizados. Los vecinos que ya han sido visitados no se añaden a la cola.
         if node not in visited:
@@ -168,23 +172,99 @@ def branch_and_bound(graph, start, end):
     return None
 
 
-if __name__ == '__main__':
-    print("Arruina tu vida por Hitler")
-    print("Anchura")
-    camino = bfs_search(tec, 'A', 'Z')
-    print(camino)
-    print("Profundidad")
-    camino = dfs_search(tec, 'A', 'Z')
-    print(camino)
-    print("Greedy")
-    camino = greedy_search(tec, 'A', 'Z')
-    print(camino)
-    print("Dijkstra")
-    camino = dijkstra_search(tec, 'A', 'Z')
-    print(camino)
-    print("A*")
-    camino = a_search(tec, 'A', 'Z')
-    print(camino)
-    print("Branch & bound")
-    camino = branch_and_bound(tec, 'A', 'Z')
-    print(camino)
+def draw_graph(graph, path=None):
+    figure.clear()  # Limpiar el gráfico existente
+    ax = figure.add_subplot(1, 1, 1)  # Agregar un nuevo eje
+    pos = nx.spring_layout(graph)
+
+    # Dibujar nodos y aristas del grafo
+    nx.draw_networkx_nodes(graph, pos, ax=ax)
+    nx.draw_networkx_labels(graph, pos, ax=ax)
+    nx.draw_networkx_edges(graph, pos, ax=ax)
+
+    # Si se proporciona un camino, resaltarlo con aristas rojas más gruesas
+    if path:
+        edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+        nx.draw_networkx_edges(graph, pos, edgelist=edges, edge_color="r", width=2, ax=ax)
+
+    ax.axis("off")
+    canvas.draw()
+
+
+# Realiza la búsqueda y muestra el resultado en el cuadro de texto
+def run_search():
+    start_node = start_var.get()
+    target_node = target_var.get()
+    algorithm = algorithm_var.get()
+    start_node = start_node.upper()
+    target_node = target_node.upper()
+
+    if algorithm == "BFS":
+        path = bfs_search(tec, start_node, target_node)
+    elif algorithm == "DFS":
+        path = dfs_search(tec, start_node, target_node)
+    elif algorithm == "Greedy":
+        path = greedy_search(tec, start_node, target_node)
+    elif algorithm == "Dijkstra":
+        path = dijkstra_search(tec, start_node, target_node)
+    elif algorithm == "A*":
+        path = a_search(tec, start_node, target_node)
+    elif algorithm == "Branch & bound":
+        path = branch_and_bound(tec, start_node, target_node)
+    else:
+        path = None
+
+    result_text.delete(1.0, tk.END)
+    result_text.insert(tk.END, f"Camino: {path}\n")
+    draw_graph(tec, path)
+
+
+# Para la interfaz gráfica usaremos Tkinter
+# Crear ventana principal
+root = tk.Tk()
+root.title("Busqueda en Grafos")
+root.resizable(False, False)
+
+# Crear letrero, caja de texto y botón para la búsqueda
+start_label = ttk.Label(root, text="Nodo inicial:")
+start_var = tk.StringVar()
+start_entry = ttk.Entry(root, textvariable=start_var)
+
+target_label = ttk.Label(root, text="Nodo objetivo:")
+target_var = tk.StringVar()
+target_entry = ttk.Entry(root, textvariable=target_var)
+
+algorithm_label = ttk.Label(root, text="Algoritmo:")
+algorithm_var = tk.StringVar()
+algorithm_combobox = ttk.Combobox(root, textvariable=algorithm_var, state="readonly")
+algorithm_combobox["values"] = ["BFS", "DFS", "Greedy", "Dijkstra", "A*", "Branch & bound"]
+algorithm_combobox.current(0)
+
+search_button = ttk.Button(root, text="Buscar", command=run_search)
+
+result_text = tk.Text(root, wrap=tk.WORD, width=50, height=10)
+
+# Crear el gráfico y el lienzo
+figure = plt.Figure(figsize=(5, 5), dpi=100)
+canvas = FigureCanvasTkAgg(figure, root)
+canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
+
+# Colocar widgets en la ventana
+start_label.grid(row=0, column=0, sticky="w")
+start_entry.grid(row=0, column=1, sticky="ew")
+
+target_label.grid(row=1, column=0, sticky="w")
+target_entry.grid(row=1, column=1, sticky="ew")
+
+algorithm_label.grid(row=2, column=0, sticky="w")
+algorithm_combobox.grid(row=2, column=1, sticky="ew")
+
+search_button.grid(row=3, column=0, columnspan=2)
+
+result_text.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+
+# Dibujar el grafo inicial
+draw_graph(tec)
+
+# Iniciar el bucle principal de eventos
+root.mainloop()
