@@ -114,19 +114,49 @@ def dijkstra_search(graph, start_node, target_node):
     return None, None
 
 
+def a_search(graph, start_node, target_node):
+    frontier = [(0, start_node)]
+    cost_so_far = {start_node: 0}
+    came_from = {start_node: None}
+    while frontier:
+        current_cost, current_node = heapq.heappop(frontier)
+        if current_node == target_node:
+            break
+        for neighbor in graph[current_node]:
+            new_cost = cost_so_far[current_node] + graph[current_node][neighbor]['weight']
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                cost_estimate = 0
+                total_cost_estimate = new_cost + cost_estimate
+                heapq.heappush(frontier, (total_cost_estimate, neighbor))
+                came_from[neighbor] = current_node
+    if target_node not in came_from:
+        return None
+    path = [target_node]
+    current = target_node
+    while current != start_node:
+        current = came_from[current]
+        path.append(current)
+    path.reverse()
+    return path
+
+
 # La función toma como entrada un grafo graph, un nodo de inicio start y un nodo de destino end.
 def branch_and_bound(graph, start, end):
-    # Crea una cola de prioridad (heap) inicializada con una tupla que contiene el costo del camino (inicialmente 0) y una lista que contiene el nodo de inicio.
+    # Crea una cola de prioridad (heap) inicializada con una tupla que contiene el costo del camino (inicialmente 0) y
+    # una lista que contiene el nodo de inicio.
     queue = [(0, [start])]
     # Crea un conjunto vacío para almacenar los nodos visitados.
     visited = set()
-    # Mientras la cola no esté vacía, extrae el elemento con el menor costo del camino desde la cola y comprueba si el nodo actual es el nodo de destino. Si es así, devuelve el costo y el camino.
+    # Mientras la cola no esté vacía, extrae el elemento con el menor costo del camino desde la cola y comprueba si el
+    # nodo actual es el nodo de destino. Si es así, devuelve el costo y el camino.
     while queue:
         (cost, path) = heapq.heappop(queue)
         node = path[-1]
         if node == end:
-            return (cost, path)
-        # Si el nodo actual no ha sido visitado, lo marca como visitado y añade sus vecinos a la cola con los costos y caminos actualizados. Los vecinos que ya han sido visitados no se añaden a la cola.
+            return cost, path
+        # Si el nodo actual no ha sido visitado, lo marca como visitado y añade sus vecinos a la cola con los costos y
+        # caminos actualizados. Los vecinos que ya han sido visitados no se añaden a la cola.
         if node not in visited:
             visited.add(node)
             for neighbor in graph[node]:
@@ -136,6 +166,7 @@ def branch_and_bound(graph, start, end):
                     heapq.heappush(queue, (new_cost, new_path))
     # Si no se ha encontrado un camino hasta el nodo de destino, devuelve None.                
     return None
+
 
 if __name__ == '__main__':
     print("Arruina tu vida por Hitler")
@@ -150,6 +181,9 @@ if __name__ == '__main__':
     print(camino)
     print("Dijkstra")
     camino = dijkstra_search(tec, 'A', 'Z')
+    print(camino)
+    print("A*")
+    camino = a_search(tec, 'A', 'Z')
     print(camino)
     print("Branch & bound")
     camino = branch_and_bound(tec, 'A', 'Z')
